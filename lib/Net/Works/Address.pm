@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Carp qw( confess );
-use Math::Int128 0.06 qw( uint128 uint128_to_hex uint128_to_number );
+use Math::Int128 0.06 qw( uint128_to_hex );
 use Net::Works::Types qw( PackedBinary Str );
 use Net::Works::Util qw(
     _integer_address_to_binary
