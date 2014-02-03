@@ -10,12 +10,20 @@ use Scalar::Util qw( blessed );
 use Exporter qw( import );
 
 our @EXPORT_OK = qw(
+    _string_address_to_binary
     _string_address_to_integer
     _integer_address_to_binary
     _binary_address_to_string
     _integer_address_to_string
     _validate_ip_string
 );
+
+sub _string_address_to_binary {
+    my $string  = shift;
+    my $version = shift;
+
+    return inet_pton( $version == 4 ? AF_INET : AF_INET6, $string )
+}
 
 sub _string_address_to_integer {
     my $string  = shift;
