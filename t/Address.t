@@ -15,6 +15,12 @@ use Net::Works::Address;
         '->as_string returns string passed to constructor'
     );
 
+    is(
+        $ip->as_binary(),
+        "\1\2\3\4",
+        '->as_binary returns correct value'
+    );
+
     my $next = $ip->next_ip();
     isa_ok(
         $next,
