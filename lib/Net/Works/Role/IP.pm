@@ -5,8 +5,12 @@ use warnings;
 use namespace::autoclean;
 
 use Math::Int128 qw( string_to_uint128 uint128 uint128_to_number );
-use Net::Works::Types qw( Int IPInt IPVersion );
+#use Bit::Vector;
+use Net::Works::Types qw( Int IPInt IPVersion PackedBinary );
 use Socket qw( AF_INET AF_INET6 );
+use Net::Works::Util qw(
+    _binary_address_to_integer
+);
 
 use Moo::Role;
 
@@ -18,12 +22,33 @@ has version => (
     required => 1,
 );
 
+has _binary => (
+    is       => 'rw',
+    reader   => 'as_binary',
+    writer   => '_set_binary',
+    isa      => PackedBinary,
+    required => 1,
+);
+
 has _integer => (
     is       => 'rw',
     writer   => '_set_integer',
     isa      => IPInt,
-    required => 1,
+    lazy     => 1,
+    builder  => '_build_integer',
 );
+
+sub _build_integer {
+    my $self = shift;
+    return _binary_address_to_integer($self->as_binary);
+}
+
+#has _bit_vector => (
+#    is       => 'rw',
+#    writer   => '_set_bit_vector',
+#    isa      => Bit::Vector,
+#    required => 0,
+#);
 
 has address_family => (
     is      => 'ro',

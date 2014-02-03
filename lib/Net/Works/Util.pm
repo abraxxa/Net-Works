@@ -13,6 +13,7 @@ our @EXPORT_OK = qw(
     _string_address_to_binary
     _string_address_to_integer
     _integer_address_to_binary
+    _binary_address_to_integer
     _binary_address_to_string
     _integer_address_to_string
     _validate_ip_string
@@ -39,13 +40,29 @@ sub _string_address_to_integer {
 
 sub _integer_address_to_binary {
     my $integer = shift;
+    my $version = shift;
 
-    if ( ref $integer && blessed $integer) {
+    if ( $version == 4 ) {
+        die "$integer is not a valid integer for an IP address"
+            if $integer >= 2**32;
+    }
+
+    if ( ref $integer && blessed $integer && $version != 4 ) {
         return uint128_to_net($integer);
     }
     else {
-        return pack( N => $integer );
+        return $version == 4
+            ? pack( N => $integer )
+            : "\0\0\0\0\0\0\0\0\0\0\0\0" . pack( N => $integer );
     }
+}
+
+sub _binary_address_to_integer {
+    my $binary = shift;
+
+    return length($binary) == 4
+        ? unpack( N => $binary )
+        : net_to_uint128($binary);
 }
 
 sub _binary_address_to_string {

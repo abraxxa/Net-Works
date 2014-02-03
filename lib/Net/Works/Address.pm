@@ -7,8 +7,8 @@ use Carp qw( confess );
 use Net::Works::Types qw( PackedBinary Str );
 use Net::Works::Util qw(
     _integer_address_to_binary
-    _integer_address_to_string
-    _string_address_to_integer
+    _binary_address_to_string
+    _string_address_to_binary
     _validate_ip_string
 );
 use Scalar::Util qw( blessed );
@@ -30,14 +30,6 @@ use Moo;
 
 with 'Net::Works::Role::IP';
 
-has _binary => (
-    is      => 'ro',
-    reader  => 'as_binary',
-    isa     => PackedBinary,
-    lazy    => 1,
-    builder => '_build_binary',
-);
-
 has _string => (
     is      => 'ro',
     reader  => 'as_string',
@@ -45,14 +37,6 @@ has _string => (
     lazy    => 1,
     builder => '_build_string',
 );
-
-sub BUILD {
-    my $self = shift;
-
-    $self->_validate_ip_integer();
-
-    return;
-}
 
 sub new_from_string {
     my $class = shift;
@@ -71,7 +55,7 @@ sub new_from_string {
     }
 
     return $class->new(
-        _integer => _string_address_to_integer( $str, $version ),
+        _binary  => _string_address_to_binary( $str, $version ),
         version  => $version,
         %p,
     );
@@ -86,6 +70,7 @@ sub new_from_integer {
     $version ||= ref $int ? 6 : 4;
 
     return $class->new(
+        _binary  => _integer_address_to_binary( $int, $version ),
         _integer => $int,
         version  => $version,
         %p,
@@ -95,10 +80,8 @@ sub new_from_integer {
 sub _build_string {
     my $self = shift;
 
-    return _integer_address_to_string($self->_integer());
+    return _binary_address_to_string($self->as_binary());
 }
-
-sub _build_binary { _integer_address_to_binary( $_[0]->as_integer() ) }
 
 sub as_integer { $_[0]->_integer() }
 
@@ -109,10 +92,10 @@ sub as_ipv4_string {
 
     confess
         'Cannot represent IP address larger than 2**32-1 as an IPv4 string'
-        if $self->as_integer() >= 2**32;
+        if $self->_integer() >= 2**32;
 
     return __PACKAGE__->new_from_integer(
-        integer => $self->as_integer(),
+        integer => $self->_integer(),
         version => 4,
     )->as_string();
 }
@@ -134,10 +117,10 @@ sub next_ip {
     my $self = shift;
 
     confess "$self is the last address in its range"
-        if $self->as_integer() == $self->_max;
+        if $self->_integer() == $self->_max;
 
     return __PACKAGE__->new_from_integer(
-        integer => $self->as_integer() + 1,
+        integer => $self->_integer() + 1,
         version => $self->version(),
     );
 }
@@ -146,10 +129,10 @@ sub previous_ip {
     my $self = shift;
 
     confess "$self is the first address in its range"
-        if $self->as_integer() == 0;
+        if $self->_integer() == 0;
 
     return __PACKAGE__->new_from_integer(
-        integer => $self->as_integer() - 1,
+        integer => $self->_integer() - 1,
         version => $self->version(),
     );
 }
@@ -166,7 +149,7 @@ sub _compare_overload {
         && blessed $other
         && eval { $self->isa(__PACKAGE__) && $other->isa(__PACKAGE__) };
 
-    return $flip * ( $self->as_integer() <=> $other->as_integer() );
+    return $flip * ( $self->_integer() <=> $other->_integer() );
 }
 
 __PACKAGE__->meta()->make_immutable();
